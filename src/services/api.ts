@@ -1,6 +1,33 @@
 import axios from 'axios';
 import { Stock } from '../types/Stock';
-import { Portfolio, SectorSummary } from '../types/Portfolio';
+import { Portfolio, SectorSummary, PortfolioMetrics } from '../types/Portfolio';
+
+// Additional type definitions
+interface MarketData {
+  symbol: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  volume?: number;
+  marketCap?: number;
+  high?: number;
+  low?: number;
+}
+
+interface ServiceStatus {
+  status: string;
+  lastUpdated: string;
+  activeServices: string[];
+}
+
+
+interface PortfolioSnapshot {
+  id: string;
+  totalValue: number;
+  totalGainLoss: number;
+  createdAt: string;
+  stocks: Stock[];
+}
 
 // Configure axios with base URL for backend API
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api';
@@ -14,7 +41,7 @@ const apiClient = axios.create({
 });
 
 // API Response wrapper interface matching backend
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -72,13 +99,15 @@ export const stockApi = {
   // Add a new stock
   createStock: async (stock: {
     stockName: string;
+    symbol: string;
     purchasePrice: number;
     quantity: number;
     stockExchangeCode: string;
-    currentMarketPrice: number;
+    sector: string;
+    purchaseDate: string;
+    currentMarketPrice?: number;
     peRatio?: number;
     latestEarnings?: number;
-    sector: string;
   }): Promise<Stock> => {
     try {
       const response = await apiClient.post<Stock>('/stocks', stock);
@@ -294,7 +323,7 @@ export const marketApi = {
   },
 
   // Get detailed market data for a symbol
-  getMarketData: async (symbol: string, exchange?: string, refresh?: boolean): Promise<any> => {
+  getMarketData: async (symbol: string, exchange?: string, refresh?: boolean): Promise<MarketData | null> => {
     try {
       const params = new URLSearchParams();
       if (exchange) params.append('exchange', exchange);
@@ -320,7 +349,7 @@ export const marketApi = {
   },
 
   // Get market service status
-  getServiceStatus: async (): Promise<any> => {
+  getServiceStatus: async (): Promise<ServiceStatus | null> => {
     try {
       const response = await apiClient.get('/market/status');
       return response.data.data;
@@ -336,7 +365,7 @@ export const portfolioApi = {
   // Get complete portfolio summary
   getPortfolioSummary: async (): Promise<Portfolio> => {
     try {
-      const response = await apiClient.get<Portfolio>('/portfolio');
+      const response = await apiClient.get('/portfolio');
       return response.data;
     } catch (error) {
       console.error('Failed to fetch portfolio summary:', error);
@@ -347,7 +376,7 @@ export const portfolioApi = {
   // Get sector analysis
   getSectorSummary: async (): Promise<SectorSummary[]> => {
     try {
-      const response = await apiClient.get<SectorSummary[]>('/portfolio/sectors');
+      const response = await apiClient.get('/portfolio/sectors');
       return response.data;
     } catch (error) {
       console.error('Failed to fetch sector summary:', error);
@@ -356,24 +385,41 @@ export const portfolioApi = {
   },
 
   // Get portfolio metrics
-  getPortfolioMetrics: async (): Promise<{
-    totalStocks: number;
-    totalSectors: number;
-    bestPerformingStock: any;
-    worstPerformingStock: any;
-    topSectorByValue: any;
-  }> => {
+  getPortfolioMetrics: async (): Promise<PortfolioMetrics | null> => {
     try {
       const response = await apiClient.get('/portfolio/metrics');
-      return response.data;
+      const metrics = response.data;
+      
+      // Map the API response to PortfolioMetrics interface with real data
+      return {
+        totalReturn: metrics.totalReturn || 0,
+        totalReturnPercentage: metrics.totalReturnPercentage || 0,
+        dayGain: metrics.dayGain || 0,
+        dayGainPercentage: metrics.dayGainPercentage || 0,
+        bestPerformer: metrics.bestPerformer ? {
+          stock: metrics.bestPerformer.stock,
+          gainPercentage: metrics.bestPerformer.gainPercentage || 0
+        } : null,
+        worstPerformer: metrics.worstPerformer ? {
+          stock: metrics.worstPerformer.stock,
+          lossPercentage: metrics.worstPerformer.lossPercentage || 0
+        } : null,
+        diversification: {
+          sectorCount: metrics.diversification?.sectorCount || 0,
+          largestSectorWeight: metrics.diversification?.largestSectorWeight || 0,
+          concentration: metrics.diversification?.concentration || 'Low' as const
+        },
+        averagePE: metrics.averagePE || 0,
+        totalDividendYield: metrics.totalDividendYield || 0
+      };
     } catch (error) {
       console.error('Failed to fetch portfolio metrics:', error);
-      throw new Error('Failed to fetch portfolio metrics');
+      return null;
     }
   },
 
   // Create portfolio snapshot
-  createSnapshot: async (): Promise<any> => {
+  createSnapshot: async (): Promise<PortfolioSnapshot> => {
     try {
       const response = await apiClient.post('/portfolio/snapshots');
       return response.data;
@@ -384,7 +430,7 @@ export const portfolioApi = {
   },
 
   // Get portfolio snapshots
-  getSnapshots: async (limit: number = 10): Promise<any[]> => {
+  getSnapshots: async (limit: number = 10): Promise<PortfolioSnapshot[]> => {
     try {
       const response = await apiClient.get(`/portfolio/snapshots?limit=${limit}`);
       return response.data;
@@ -431,8 +477,8 @@ export interface ApiError {
   code?: string;
 }
 
-export const isApiError = (error: any): error is ApiError => {
-  return error && typeof error.message === 'string';
+export const isApiError = (error: unknown): error is ApiError => {
+  return error !== null && typeof error === 'object' && 'message' in error && typeof (error as { message: unknown }).message === 'string';
 };
 
 // Utility functions

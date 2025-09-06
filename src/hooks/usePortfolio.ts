@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Stock, StockCreateRequest, StockUpdateRequest } from '../types/Stock';
 import { Portfolio, SectorSummary, PortfolioMetrics } from '../types/Portfolio';
-import { portfolioApi, stockApi, ApiError, isApiError } from '../services/api';
+import { portfolioApi, stockApi, isApiError } from '../services/api';
 
 interface UsePortfolioReturn {
   portfolio: Portfolio | null;

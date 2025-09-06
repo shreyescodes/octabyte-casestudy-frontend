@@ -27,6 +27,8 @@ export default function SectorSummary({ sectorData, stocks }: SectorSummaryProps
             totalPresentValue: 0,
             totalGainLoss: 0,
             stocks: [],
+            stockCount: 0,
+            gainLossPercentage: 0,
           };
         }
         
@@ -34,9 +36,17 @@ export default function SectorSummary({ sectorData, stocks }: SectorSummaryProps
         acc[stock.sector].totalPresentValue += stock.presentValue;
         acc[stock.sector].totalGainLoss += stock.gainLoss;
         acc[stock.sector].stocks.push(stock);
+        acc[stock.sector].stockCount += 1;
         
         return acc;
       }, {} as Record<string, SectorSummaryType>);
+      
+      // Calculate gain/loss percentages
+      Object.values(sectors).forEach(sector => {
+        if (sector.totalInvestment > 0) {
+          sector.gainLossPercentage = (sector.totalGainLoss / sector.totalInvestment) * 100;
+        }
+      });
       
       return Object.values(sectors);
     }

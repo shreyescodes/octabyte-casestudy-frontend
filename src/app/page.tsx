@@ -11,7 +11,7 @@ import { Stock, StockCreateRequest, StockUpdateRequest } from '../types/Stock';
 import { RefreshCw, AlertCircle, Plus, TrendingUp } from 'lucide-react';
 
 export default function Home() {
-  const { stocks, sectorSummary, portfolio, metrics, loading, error, refreshData, addStock, updateStock, removeStock } = usePortfolio(15000);
+  const { stocks, sectorSummary, metrics, loading, error, refreshData, addStock, updateStock, removeStock } = usePortfolio(15000);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStock, setEditingStock] = useState<Stock | undefined>(undefined);
   const [modalLoading, setModalLoading] = useState(false);
@@ -174,7 +174,7 @@ export default function Home() {
           <div className="mt-4 p-4 bg-gray-100 rounded text-sm">
             <strong>Debug Info:</strong>
             <br />Stocks count: {stocks.length}
-            <br />onDelete function: {handleDeleteStock ? 'Available' : 'Not available'}
+            <br />onDelete function: {typeof handleDeleteStock === 'function' ? 'Available' : 'Not available'}
             <br />Sample stock IDs: {stocks.slice(0, 2).map(s => s.id || 'NO ID').join(', ')}
           </div>
         </div>

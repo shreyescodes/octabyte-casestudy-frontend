@@ -152,7 +152,7 @@ export default function PortfolioMetrics({ metrics, loading }: PortfolioMetricsP
             <PieChart className="w-4 h-4 text-purple-600" />
           </div>
           <div className="text-lg font-bold text-purple-900">
-            {metrics.diversification?.sectorCount || metrics.totalSectors || 0} sectors
+            {metrics.diversification?.sectorCount || 0} sectors
           </div>
           <div className={`text-xs px-2 py-1 rounded-full ${getDiversificationColor(metrics.diversification?.concentration || 'Low')}`}>
             {metrics.diversification?.concentration || 'Low'} risk

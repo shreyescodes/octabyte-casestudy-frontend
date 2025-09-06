@@ -38,3 +38,20 @@ export interface PortfolioMetrics {
   averagePE: number;
   totalDividendYield: number;
 }
+
+export interface SectorData {
+  sector: string;
+  totalInvestment: number;
+  totalPresentValue: number;
+  totalGainLoss: number;
+  stockCount: number;
+  gainLossPercentage: number;
+}
+
+export interface PortfolioOverview {
+  totalStocks: number;
+  totalSectors: number;
+  bestPerformingStock: Stock | null;
+  worstPerformingStock: Stock | null;
+  topSectorByValue: SectorData | null;
+}
